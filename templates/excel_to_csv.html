@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Excel to CSV Converter{% endblock %}
+
+{% block content %}
+<h1>Excel to CSV Converter</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flash-messages">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+<form action="{{ url_for('excel_to_csv') }}" method="post" enctype="multipart/form-data">
+  <div>
+    <label for="excelfile">Excel File (.xls or .xlsx):</label>
+    <input type="file" id="excelfile" name="excelfile" required>
+  </div>
+  <div style="margin-top: 12px;">
+    <button type="submit" class="btn">
+      Convert to CSV
+    </button>
+  </div>
+</form>
+{% endblock %}

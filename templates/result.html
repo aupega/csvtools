@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Comparison Results{% endblock %}
+
+{% block content %}
+<h1>Comparison Results</h1>
+{% if mode == 'in1-not-in2' %}
+  <p><strong>Mode:</strong> Show rows in File 1 that are <u>not</u> in File 2</p>
+{% elif mode == 'duplicates' %}
+  <p><strong>Mode:</strong> Show rows in File 1 that are <u>also</u> in File 2</p>
+{% else %}
+  <p><strong>Mode:</strong> {{ mode }}</p>
+{% endif %}
+<p><strong>Column:</strong> {{ column }}</p>
+<p><strong>Total Matches:</strong> {{ rows|length }}</p>
+{% if rows %}
+  <div class="table-container">
+    <div class="pagination-flex" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 4px; background: transparent !important;">
+      <div id="pagination-controls"></div>
+    </div>
+    <table id="result-table">
+      <thead>
+        <tr>
+          {% for h in headers %}
+            <th>{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody id="result-tbody">
+        {% for r in rows %}
+          <tr>
+            {% for h in headers %}
+              <td>{{ r[h] }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="height: 24px;"></div>
+  <div style="display: inline-flex; gap: 12px; align-items: center;">
+    <a href="{{ url_for('download_csv') }}" class="btn">
+      <i class="bi bi-box-arrow-down" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Download CSV
+    </a>
+  <a href="{{ url_for('compare_csv') }}" class="btn btn-back">
+      <i class="bi bi-skip-backward" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Back to Upload
+    </a>
+  </div>
+{% else %}
+  <p>No rows found for this comparison.</p>
+  <div style="height: 24px;"></div>
+  <div style="display: inline-flex; align-items: center;">
+  <a href="{{ url_for('compare_csv') }}" class="btn btn-back">
+      <i class="bi bi-skip-backward" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Back to Upload
+    </a>
+  </div>
+{% endif %}
+{% if rows %}
+<script>
+const rowsPerPage = 10;
+const table = document.getElementById('result-table');
+const tbody = document.getElementById('result-tbody');
+const allRows = Array.from(tbody.querySelectorAll('tr'));
+const pageCount = Math.ceil(allRows.length / rowsPerPage);
+let currentPage = 1;
+
+function showPage(page) {
+  currentPage = page;
+  tbody.innerHTML = '';
+  const start = (page - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  allRows.slice(start, end).forEach(row => tbody.appendChild(row));
+  renderPagination();
+}
+
+function renderPagination() {
+  const controls = document.getElementById('pagination-controls');
+  if (pageCount <= 1) { controls.innerHTML = ''; return; }
+  let html = '';
+  html += `<button class="btn" onclick="showPage(${currentPage-1})" ${currentPage===1?'disabled':''}>
+    <svg viewBox='0 0 20 20'><path d='M13 15l-5-5 5-5v10z'/></svg>Previous</button> `;
+  html += `Page ${currentPage} of ${pageCount} `;
+  html += `<button class="btn" onclick="showPage(${currentPage+1})" ${currentPage===pageCount?'disabled':''}>
+    Next<svg viewBox='0 0 20 20'><path d='M7 5l5 5-5 5V5z'/></svg></button>`;
+  controls.innerHTML = html;
+}
+
+if (allRows.length > 0) showPage(1);
+</script>
+{% endif %}
+{% endblock %}

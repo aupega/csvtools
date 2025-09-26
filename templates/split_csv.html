@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Split CSV{% endblock %}
+
+{% block content %}
+<h1>Split CSV File</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flash-messages">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+<form action="{{ url_for('split_csv') }}" method="post" enctype="multipart/form-data">
+  <div>
+    <label for="csvfile">CSV File:</label>
+    <input type="file" id="csvfile" name="csvfile" required>
+  </div>
+  <div>
+    <label for="split_count">Rows per Split File:</label>
+    <div class="fancy-input-wrapper">
+      <span class="fancy-input-icon">🔢</span>
+      <input type="number" id="split_count" name="split_count" min="1" required class="fancy-input">
+    </div>
+  </div>
+  <div>
+    <button type="submit" class="btn">
+      <i class="bi bi-terminal-split" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Split & Download ZIP
+    </button>
+  </div>
+</form>
+{% endblock %}

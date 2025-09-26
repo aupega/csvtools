@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<div style="text-align:center; margin-top:60px;">
+  <h1>Welcome to CSV Tools!</h1>
+  <p style="font-size:1.2em; margin:24px 0;">Easily compare, split, deduplicate, and convert your CSV and Excel files.<br>
+    Use the sidebar to access all features.</p>
+  <a href="{{ url_for('compare_csv') }}" class="btn" style="font-size:1.1em; margin-top:18px;">
+    <i class="bi bi-arrow-left-right" style="margin-right:0.4em;"></i> Start Comparing CSVs
+  </a>
+</div>
+{% endblock %}

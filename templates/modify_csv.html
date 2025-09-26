@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Modify CSV{% endblock %}
+{% block content %}
+<h1>Modify CSV File</h1>
+<form action="{{ url_for('modify_csv') }}" method="post" enctype="multipart/form-data">
+  <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 18px;">
+    <label for="modfile" style="margin-bottom:4px;">CSV File:</label>
+    <input type="file" id="modfile" name="modfile" required style="margin-bottom:8px;">
+    <button type="submit" class="btn" style="margin-top:6px;">
+      <i class="bi bi-upload" style="margin-right:6px;"></i>Upload & Analyze
+    </button>
+  </div>
+</form>
+{% if columns %}
+  <h2 style="margin-top:32px;">Columns & Options</h2>
+  <form action="{{ url_for('modify_csv') }}" method="post">
+    <input type="hidden" name="modfile_path" value="{{ modfile_path }}">
+    <table class="table" style="margin-top:18px;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Existing Format</th>
+          <th>New Type</th>
+          <th>Action</th>
+          <th>Modify Options</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for col in columns %}
+        <tr>
+          <td>{{ loop.index0|excel_col }}</td>
+          <td>{{ col.name }}</td>
+          <td>{{ col.type }}</td>
+          <td>
+            {% if col.type == 'Date' or col.type == 'DateTime' %}
+              {{ col.format if col.format else 'N/A' }}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+          <td>
+            <select name="new_type_{{ col.name }}">
+              <option value="{{ col.type }}">{{ col.type }}</option>
+              <option value="Text">Text</option>
+              <option value="Integer">Integer</option>
+              <option value="Float">Float</option>
+              <option value="Date">Date</option>
+              <option value="DateTime">DateTime</option>
+              <option value="Boolean">Boolean</option>
+            </select>
+          </td>
+          <td>
+            <select name="action_{{ col.name }}" onchange="toggleModify(this, '{{ col.name }}')">
+              <option value="keep">Keep</option>
+              <option value="modify">Modify</option>
+              <option value="delete">Delete</option>
+            </select>
+          </td>
+          <td>
+            <div id="modify_opts_{{ col.name }}" style="display:none;">
+              <select name="mod_type_{{ col.name }}" onchange="showModifyFields(this, '{{ col.name }}')">
+                <option value="replace">Replace Value</option>
+                <option value="concat">Concatenate Columns</option>
+                <option value="datefmt">Change Date Format</option>
+              </select>
+              <div id="replace_field_{{ col.name }}" style="display:none; margin-top:8px;">
+                <input type="text" name="new_value_{{ col.name }}" placeholder="New value" style="width:260px; padding:6px; font-family: inherit; font-size: inherit;">
+              </div>
+              <div id="concat_field_{{ col.name }}" style="display:none; margin-top:8px;">
+                <input type="text" name="concat_cols_{{ col.name }}" placeholder="Columns to concatenate e.g. col1+','+col2" style="width:320px; padding:6px; font-family: inherit; font-size: inherit;">
+              </div>
+              <div id="datefmt_field_{{ col.name }}" style="display:none; margin-top:8px;">
+                <input type="text" name="datefmt_modify_{{ col.name }}" placeholder="New date format e.g. dd/MM/yyyy" style="width:260px; padding:6px; font-family: inherit; font-size: inherit;">
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="btn" style="margin-top:18px;">Apply & Download CSV</button>
+  </form>
+  <script>
+    function toggleModify(sel, col) {
+      var div = document.getElementById('modify_opts_' + col);
+      div.style.display = sel.value === 'modify' ? 'block' : 'none';
+    }
+    function showModifyFields(sel, col) {
+      var replaceDiv = document.getElementById('replace_field_' + col);
+      var concatDiv = document.getElementById('concat_field_' + col);
+      var datefmtDiv = document.getElementById('datefmt_field_' + col);
+      replaceDiv.style.display = 'none';
+      concatDiv.style.display = 'none';
+      datefmtDiv.style.display = 'none';
+      if (sel.value === 'replace') {
+        replaceDiv.style.display = 'block';
+      } else if (sel.value === 'concat') {
+        concatDiv.style.display = 'block';
+      } else if (sel.value === 'datefmt') {
+        datefmtDiv.style.display = 'block';
+      }
+    }
+  </script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}CSV Compare Tool{% endblock %}
+{% block content %}
+<h1>Upload CSVs to Compare</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flash-messages">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+<form id="compare-form" action="{{ url_for('compare') }}" method="post" enctype="multipart/form-data">
+  <div>
+    <label for="file1">File 1:</label>
+    <input type="file" id="file1" name="file1" required>
+  </div>
+  <div>
+    <label for="file2">File 2:</label>
+    <input type="file" id="file2" name="file2" required>
+  </div>
+  <div>
+    <label for="column">Column from File 1:</label>
+    <select id="column" name="column" required>
+     <option value="">-- Upload File 1 first --</option>
+    </select>
+  </div>
+  <div>
+    <label for="column2">Column from File 2:</label>
+    <select id="column2" name="column2" required>
+     <option value="">-- Upload File 2 first --</option>
+    </select>
+  </div>
+  <div>
+    <label for="mode">Comparison Mode:</label>
+    <select id="mode" name="mode" required>
+      <option value="duplicates">Find Duplicates (File 1 in File 2)</option>
+      <option value="in1-not-in2">Find in File 1 Not in File 2</option>
+    </select>
+  </div>
+  <div>
+    <button type="submit" class="btn">
+      <i class="bi bi-arrow-left-right" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Compare
+    </button>
+  </div>
+</form>
+<script>
+// Auto-select File 2 column if it matches File 1 column (ignore case)
+document.getElementById("column").addEventListener("change", function() {
+  const col1 = this.value.trim().toLowerCase();
+  const col2Select = document.getElementById("column2");
+  for (let i = 0; i < col2Select.options.length; i++) {
+    if (col2Select.options[i].value.trim().toLowerCase() === col1) {
+      col2Select.selectedIndex = i;
+      break;
+    }
+  }
+});
+document.getElementById("file1").addEventListener("change", function() {
+  let file = this.files[0];
+  if (!file) return;
+  let formData = new FormData();
+  formData.append("file1", file);
+  fetch("{{ url_for('headers') }}", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      let select = document.getElementById("column");
+      select.innerHTML = "";
+      if (data.headers) {
+        data.headers.forEach(h => {
+          let opt = document.createElement("option");
+          opt.value = h;
+          opt.textContent = h;
+          select.appendChild(opt);
+        });
+      }
+    });
+});
+
+// Load column names for File 2 after upload
+document.getElementById("file2").addEventListener("change", function() {
+  let file = this.files[0];
+  if (!file) return;
+  let formData = new FormData();
+  formData.append("file2", file);
+  fetch("{{ url_for('headers2') }}", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      let select = document.getElementById("column2");
+      select.innerHTML = "";
+      if (data.headers) {
+        data.headers.forEach(h => {
+          let opt = document.createElement("option");
+          opt.value = h;
+          opt.textContent = h;
+          select.appendChild(opt);
+        });
+      }
+    });
+});
+</script>
+{% endblock %}

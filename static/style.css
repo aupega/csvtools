@@ -1,0 +1,254 @@
+/* Match pagination controls background to .content */
+.pagination-flex, #pagination-controls {
+  background: #f7f9fc;
+}
+
+/* Pagination controls */
+.pagination-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #2b5876;
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0 2px;
+  transition: background 0.2s, transform 0.1s;
+}
+.pagination-btn:disabled {
+  background: #bfc9d9;
+  color: #fff;
+  cursor: not-allowed;
+}
+.pagination-btn:hover:not(:disabled) {
+  background: #4e4376;
+  transform: scale(1.03);
+}
+/* Fancy number input for split count */
+.fancy-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.fancy-input-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1.1em;
+  color: #4e4376;
+  pointer-events: none;
+}
+.fancy-input {
+  width: 140px;
+  min-width: 80px;
+  max-width: 180px;
+  padding: 10px 12px 10px 36px;
+  border: 1.5px solid #2b5876;
+  border-radius: 8px;
+  font-size: 1.05em;
+  background: #f7f9fc;
+  box-shadow: 0 2px 8px rgba(43,88,118,0.07);
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.fancy-input:focus {
+  outline: none;
+  border-color: #4e4376;
+  box-shadow: 0 2px 12px rgba(78,67,118,0.13);
+}
+.btn svg {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  margin-right: 0.4em;
+  margin-bottom: 2px;
+  fill: currentColor;
+}
+select, option {
+  font-family: inherit;
+}
+/* Global */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f7f9fc;
+  color: #333;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: linear-gradient(180deg, #2b5876, #4e4376);
+  color: #fff;
+  padding: 20px;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  font-size: 1.2em;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding-bottom: 8px;
+}
+
+.sidebar a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  margin: 12px 0;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.sidebar a:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+/* Headings */
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  color: #2b5876;
+}
+
+/* Forms */
+form div {
+  margin-bottom: 15px;
+}
+
+label {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+input[type="file"],
+input[type="text"],
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95em;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 18px;
+  background: #2b5876;
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.2s, transform 0.1s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:hover {
+  background: #4e4376;
+  transform: scale(1.03);
+}
+
+/* Back button style */
+.btn-back {
+  background: #e0e4ea;
+  color: #2b5876;
+  border: 1.5px solid #bfc9d9;
+  margin-left: 0;
+}
+.btn-back:hover {
+  background: #d1d7e6;
+  color: #4e4376;
+  border-color: #4e4376;
+}
+
+/* Back button style */
+.btn-back {
+  background: #e0e4ea;
+  color: #2b5876;
+  border: 1.5px solid #bfc9d9;
+  margin-left: 0;
+}
+.btn-back:hover {
+  background: #d1d7e6;
+  color: #4e4376;
+  border-color: #4e4376;
+}
+
+/* Flash messages */
+.flash-messages {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 20px 0;
+}
+
+.flash-messages li {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.flash-messages li.error {
+  background: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+}
+
+.flash-messages li.success {
+  background: #d1e7dd;
+  color: #0f5132;
+  border: 1px solid #badbcc;
+}
+
+/* Table */
+.table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  border-radius: 8px;
+  background: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+thead {
+  background: #2b5876;
+  color: #fff;
+}
+
+thead th {
+  padding: 12px;
+  text-align: left;
+}
+
+tbody tr:nth-child(even) {
+  background: #f3f6fa;
+}
+
+tbody td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Small note text */
+p {
+  margin: 10px 0;
+}

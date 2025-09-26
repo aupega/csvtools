@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Check Duplicates{% endblock %}
+
+{% block content %}
+<h1>Check Duplicates in CSV</h1>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul class="flash-messages">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+<form id="dup-form" action="{{ url_for('check_duplicates') }}" method="post" enctype="multipart/form-data">
+  <input type="hidden" id="dupfile_path" name="dupfile_path" value="{{ request.form.dupfile_path if request.form.dupfile_path else dupfile_path }}">
+  <input type="hidden" id="last_column" name="last_column" value="{{ request.form.dup_column if request.form.dup_column else last_column }}">
+  <div>
+    <label for="dupfile">CSV File:</label>
+    <input type="file" id="dupfile" name="dupfile">
+    {% if loaded_filename %}
+      <div style="margin-top: 6px; color: #333; font-size: 0.97em;">
+        <i class="bi bi-file-earmark"></i> Loaded file: <strong>{{ loaded_filename }}</strong>
+      </div>
+    {% endif %}
+  </div>
+  <div>
+    <label for="dup_column">Column to Check:</label>
+    <select id="dup_column" name="dup_column" required>
+      {% if headers %}
+        <option value="">-- Select Column --</option>
+        {% for h in headers %}
+          <option value="{{ h }}" {% if h == last_column %}selected{% endif %}>{{ h }}</option>
+        {% endfor %}
+      {% else %}
+        <option value="">-- Upload CSV first --</option>
+      {% endif %}
+    </select>
+  </div>
+  <div style="display: flex; gap: 12px; align-items: center;">
+    <script>
+    // After file upload, set hidden input with temp file path (handled by backend on submit)
+    // No client-side action needed
+    </script>
+    <button type="submit" class="btn">
+      <i class="bi bi-search" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Check for Duplicates
+    </button>
+    <button type="submit" class="btn btn-back" name="retain_one" value="1">
+      <i class="bi bi-file-earmark-diff" style="font-size: 1.1em; margin-right: 0.4em;"></i>
+      Remove Duplicates and Download CSV
+    </button>
+  </div>
+</form>
+{% if duplicates %}
+  <p>
+    <strong>Unique Duplicate Values:</strong> {{ unique_dup_count }}<br>
+    <strong>Total Duplicate Rows:</strong> {{ duplicates|length }}
+  </p>
+  <div class="table-container">
+    <div class="pagination-flex" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 4px; background: transparent !important;">
+      <div id="pagination-controls"></div>
+    </div>
+    <table id="result-table">
+      <thead>
+        <tr>
+          {% for h in headers %}
+            <th>{{ h }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody id="result-tbody">
+            {% for row in duplicates %}
+              <tr>
+                {% for h in headers %}
+                  <td>{{ row[h] }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="height: 24px;"></div>
+      <script>
+      // Pagination for result table (copied from result.html)
+      const rowsPerPage = 10;
+      const table = document.getElementById('result-table');
+      const tbody = document.getElementById('result-tbody');
+      const allRows = Array.from(tbody.querySelectorAll('tr'));
+      const pageCount = Math.ceil(allRows.length / rowsPerPage);
+      let currentPage = 1;
+
+      function showPage(page) {
+        currentPage = page;
+        tbody.innerHTML = '';
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        allRows.slice(start, end).forEach(row => tbody.appendChild(row));
+        renderPagination();
+      }
+
+      function renderPagination() {
+        const controls = document.getElementById('pagination-controls');
+        if (pageCount <= 1) { controls.innerHTML = ''; return; }
+        let html = '';
+        html += `<button class="btn" onclick="showPage(${currentPage-1})" ${currentPage===1?'disabled':''}>
+          <svg viewBox='0 0 20 20'><path d='M13 15l-5-5 5-5v10z'/></svg>Previous</button> `;
+        html += `Page ${currentPage} of ${pageCount} `;
+        html += `<button class="btn" onclick="showPage(${currentPage+1})" ${currentPage===pageCount?'disabled':''}>
+          Next<svg viewBox='0 0 20 20'><path d='M7 5l5 5-5 5V5z'/></svg></button>`;
+        controls.innerHTML = html;
+      }
+
+      if (allRows.length > 0) showPage(1);
+      </script>
+    {% endif %}
+  </div>
+<script>
+document.getElementById("dupfile").addEventListener("change", function() {
+  let file = this.files[0];
+  if (!file) return;
+  let formData = new FormData();
+  formData.append("dupfile", file);
+  fetch("{{ url_for('dup_headers') }}", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      let select = document.getElementById("dup_column");
+      select.innerHTML = "";
+      if (data.headers) {
+        data.headers.forEach(h => {
+          let opt = document.createElement("option");
+          opt.value = h;
+          opt.textContent = h;
+          select.appendChild(opt);
+        });
+      } else {
+        let opt = document.createElement("option");
+        opt.textContent = "No headers found";
+        select.appendChild(opt);
+      }
+    })
+    .catch(err => console.error(err));
+});
+// Pagination logic will be added in the backend-rendered table, similar to result.html
+</script>
+
+{% endblock %}
