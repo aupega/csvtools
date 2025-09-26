@@ -1,6 +1,6 @@
 
 # CSV Compare & Modify Flask App
-
+# Modify CSV is still work in progress
 This app lets you upload, compare, deduplicate, split, and modify CSV files with a modern web interface.
 
 ## Quick Start on a New Laptop
