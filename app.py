@@ -143,48 +143,112 @@ def modify_csv():
                     datefmt_modify = request.form.get(f"datefmt_modify_{col}")
                     if mod_type == "replace" and new_value:
                         df[col] = new_value
+                    elif mod_type == "add_value" and new_value:
+                        # Add a new value as-is to the output CSV for this column
+                        df[col] = [new_value] * len(df)
                     elif mod_type == "concat" and concat_cols:
-                        # Parse columns and join with custom separator
+                        # Enhanced: allow custom separators between columns using quoted strings
                         import re
-                        # Split by +, keep quoted separators
-                        parts = re.split(r"\+", concat_cols)
+                        # Robust parser for quoted separators and column names
+                        # Example: A":"B, " "A, A"-NA"
+                        tokens = []
+                        pattern = r'"([^"]*)"|([A-Za-z0-9_]+)'
+                        for match in re.finditer(pattern, concat_cols):
+                            sep, colname = match.groups()
+                            if sep is not None:
+                                tokens.append((sep, ''))
+                            elif colname is not None:
+                                tokens.append(('', colname))
                         concat_expr = []
-                        for part in parts:
-                            part = part.strip()
-                            if part.startswith("'") and part.endswith("'"):
-                                concat_expr.append(part[1:-1])
-                            elif part in df.columns:
-                                concat_expr.append(df[part].astype(str))
-                        if concat_expr:
-                            from functools import reduce
-                            df[col] = reduce(lambda a, b: a + b if isinstance(a, pd.Series) else str(a) + str(b), concat_expr)
+                        columns_found = [colname for sep, colname in tokens if colname and colname in df.columns]
+                        # Only concatenate if at least one column is present in the pattern
+                        # Support column references by index (A, B, C, ...) as well as by name
+                        col_letters = {chr(ord('A') + idx): name for idx, name in enumerate(df.columns)}
+                        def resolve_col(colname):
+                            if colname in df.columns:
+                                return colname
+                            elif colname in col_letters:
+                                return col_letters[colname]
+                            else:
+                                return None
+
+                        columns_present = any(colname and resolve_col(colname) for sep, colname in tokens)
+                        separators_present = any(sep for sep, colname in tokens)
+                        if columns_present:
+                            nrows = len(df)
+                            output = []
+                            for i in range(nrows):
+                                row_parts = []
+                                for sep, colname in tokens:
+                                    if sep:
+                                        row_parts.append(sep)
+                                    elif colname:
+                                        resolved = resolve_col(colname)
+                                        if resolved:
+                                            val = df[resolved].iloc[i]
+                                            if pd.isnull(val) or str(val).lower() in ["nan", "nat"]:
+                                                row_parts.append("")
+                                            else:
+                                                row_parts.append(str(val))
+                                output.append(''.join(row_parts))
+                            df[col] = output
+                        elif separators_present:
+                            # Only separator, output blank
+                            df[col] = [''] * len(df)
+                        else:
+                            # No columns or separators, output blank
+                            df[col] = [''] * len(df)
                     elif mod_type == "datefmt":
                         try:
                             if datefmt_modify:
-                                # Use errors='coerce' to avoid NaT, then fillna with empty string
-                                dt = pd.to_datetime(df[col], errors='coerce')
-                                def format_date(val):
-                                    if pd.isnull(val):
-                                        return ''
-                                    # If val is a string, try to parse
-                                    if isinstance(val, str):
+                                import re
+                                from dateutil import parser
+                                formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y", "%m/%d/%Y"]
+                                def to_strftime(fmt):
+                                    return fmt.replace('dd', '%d').replace('MM', '%m').replace('yyyy', '%Y').replace('yy', '%y').replace('HH', '%H').replace('mm', '%M').replace('ss', '%S')
+                                strftime_format = to_strftime(datefmt_modify)
+                                def detect_format(val):
+                                    val = str(val).strip()
+                                    for fmt in formats:
                                         try:
-                                            val = pd.to_datetime(val, errors='coerce')
+                                            pd.to_datetime(val, format=fmt, errors='raise')
+                                            return fmt
+                                        except Exception:
+                                            continue
+                                    return None
+                                def robust_parse(val):
+                                    val_orig = str(val)
+                                    val = val_orig.strip()
+                                    # Remove debug logging for production
+                                    if not val or val.lower() in ["nan", "nat"]:
+                                        return ''
+                                    if val == 'NaT':
+                                        return ''
+                                    fmt = detect_format(val)
+                                    try:
+                                        if fmt:
+                                            parsed = pd.to_datetime(val, format=fmt, errors='raise')
+                                        else:
+                                            parsed = parser.parse(val)
+                                        if pd.isnull(parsed) or str(parsed) == 'NaT' or str(parsed) == 'nan':
+                                            return ''
+                                        try:
+                                            result = parsed.strftime(strftime_format)
                                         except Exception:
                                             return ''
-                                    if pd.isnull(val):
-                                        return ''
-                                    try:
-                                        return val.strftime(datefmt_modify)
+                                        return str(result)
                                     except Exception:
                                         return ''
-                                df[col] = dt.apply(format_date)
+                                df[col] = df[col].apply(robust_parse)
+                                # ...existing code...
                             else:
                                 df[col] = pd.to_datetime(df[col], errors='coerce')
                         except Exception:
                             pass
-                # Apply type conversion if new_type is different
-                if new_type and new_type != str(df[col].dtype):
+                # Skip type conversion if 'datefmt' modification was applied
+                if action == "modify" and mod_type == "datefmt":
+                    pass  # Already handled above, do not overwrite
+                elif new_type and new_type != str(df[col].dtype):
                     try:
                         datefmt = request.form.get(f"datefmt_{col}")
                         if new_type == "Integer":
@@ -207,8 +271,10 @@ def modify_csv():
                             df[col] = df[col].astype(bool)
                     except Exception:
                         pass
-            bio = io.StringIO()
-            df.to_csv(bio, index=False)
+            # Replace all NaN, NaT, and 'nan'/'NaT' strings with blanks before saving
+            df = df.replace({pd.NA: '', pd.NaT: '', 'NaN': '', 'NaT': '', 'nan': '', 'nat': ''})
+            bio = io.StringIO(newline='')
+            df.to_csv(bio, index=False, quoting=1, lineterminator='\n')
             bio.seek(0)
             return send_file(
                 io.BytesIO(bio.getvalue().encode("utf-8")),
@@ -363,7 +429,7 @@ def read_csv_stream(stream):
 
 def rows_to_csv_bytes(fieldnames, rows):
     buf = io.StringIO(newline='')
-    writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore", lineterminator="\n")
+    writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore", lineterminator="\n", quoting=csv.QUOTE_ALL)
     writer.writeheader()
     for r in rows:
         writer.writerow(r)
